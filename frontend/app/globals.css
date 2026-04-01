@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+/* ================================================================
+   AudioSplitter AI — Global Tasarım Sistemi
+   Premium karanlık stüdyo teması, glassmorphism ve gradient aksanlar
+   ================================================================ */
+
+@theme inline {
+  --color-background: #09090b;
+  --color-foreground: #fafafa;
+  --color-card: #18181b;
+  --color-card-hover: #27272a;
+  --color-border: #27272a;
+  --color-border-light: #3f3f46;
+  --color-muted: #a1a1aa;
+  --color-accent: #8b5cf6;
+  --color-accent-light: #a78bfa;
+  --color-accent-dark: #7c3aed;
+  --color-success: #22c55e;
+  --color-error: #ef4444;
+  --color-warning: #f59e0b;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+/* ── Glassmorphism Kartlar ── */
+.glass-card {
+  background: rgba(24, 24, 27, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(63, 63, 70, 0.5);
+  border-radius: 1rem;
+}
+
+/* ── Gradient Arka Plan ── */
+.bg-gradient-radial {
+  background: radial-gradient(ellipse at top, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+              radial-gradient(ellipse at bottom right, rgba(59, 130, 246, 0.08) 0%, transparent 50%);
+}
+
+/* ── Işıltı (Glow) Efektleri ── */
+.glow-accent {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3),
+              0 0 60px rgba(139, 92, 246, 0.1);
+}
+
+.glow-success {
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.3),
+              0 0 60px rgba(34, 197, 94, 0.1);
+}
+
+/* ── Custom Audio Slider ── */
+input[type="range"].audio-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: #3f3f46;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"].audio-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #8b5cf6;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+input[type="range"].audio-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.3);
+}
+
+input[type="range"].audio-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #8b5cf6;
+  cursor: pointer;
+  border: none;
+}
+
+/* ── Animasyonlar ── */
+
+/* Pulse glow animasyonu (işleniyor durumu) */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 10px rgba(139, 92, 246, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(139, 92, 246, 0.6), 0 0 60px rgba(139, 92, 246, 0.2); }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Yukarı kayan yazı (durum mesajları) */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out;
+}
+
+/* Dalga animasyonu (ses işleniyor) */
+@keyframes wave {
+  0%, 100% { height: 8px; }
+  50% { height: 28px; }
+}
+
+.wave-bar {
+  display: inline-block;
+  width: 4px;
+  background: linear-gradient(to top, #8b5cf6, #a78bfa);
+  border-radius: 2px;
+  animation: wave 1.2s ease-in-out infinite;
+}
+
+/* Scroll bar minimal */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
+}

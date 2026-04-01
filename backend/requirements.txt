@@ -1,0 +1,23 @@
+# ==========================================
+# AudioSplitter AI — Backend Bağımlılıkları
+# ==========================================
+
+# --- Web Framework & Sunucu ---
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+
+# --- Yapay Zeka / Derin Öğrenme ---
+# PyTorch: CUDA destekli sürüm için https://pytorch.org adresinden
+# sisteminize uygun komutu kullanın. Aşağıdaki CPU sürümüdür.
+torch>=2.1.0
+# NOT: torchaudio yerine soundfile kullanılıyor.
+# Neden: Arch Linux'taki torch CUDA 13.1 ile derlenmiş,
+# ama PyPI'daki torchaudio CUDA 12'ye bağımlı (uyumsuz).
+# soundfile hiçbir CUDA bağımlılığı gerektirmez.
+soundfile>=0.12.0
+numpy>=1.24.0
+demucs>=4.0.0
+
+# --- Yardımcı Kütüphaneler ---
+aiofiles==24.1.0
