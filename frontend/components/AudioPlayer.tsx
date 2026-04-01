@@ -8,17 +8,19 @@
  *
  * Özellikler:
  * - Play/Pause kontrolü
- * - İlerleme çubuğu (seek desteği)
+ * - İlerleme çubuğu (seek desteği — tıklanabilir)
  * - Süre göstergesi (geçen / toplam)
  * - Stem'e özgü ikon ve renk
  * - Dalga formu animasyonu
+ *
+ * 6 Stem desteği: vocals, drums, bass, guitar, piano, other
  */
 
 import React, { useRef, useState, useEffect, useCallback } from "react";
-import { Play, Pause, Mic, Drum, Guitar, Music } from "lucide-react";
+import { Play, Pause, Mic, Drum, Guitar, Music, Piano } from "lucide-react";
 
 interface AudioPlayerProps {
-  /** Stem adı (vocals, drums, bass, other) */
+  /** Stem adı (vocals, drums, bass, guitar, piano, other) */
   stemName: string;
   /** Ses dosyasının URL'i (backend stream endpoint) */
   audioUrl: string;
@@ -59,6 +61,20 @@ const STEM_CONFIG: Record<
     color: "text-blue-400",
     bgColor: "bg-blue-500/20",
   },
+  guitar: {
+    icon: Guitar,
+    label: "Gitar",
+    gradient: "from-amber-500 to-yellow-500",
+    color: "text-amber-400",
+    bgColor: "bg-amber-500/20",
+  },
+  piano: {
+    icon: Piano,
+    label: "Piyano",
+    gradient: "from-rose-500 to-fuchsia-500",
+    color: "text-rose-400",
+    bgColor: "bg-rose-500/20",
+  },
   other: {
     icon: Music,
     label: "Diğer",
@@ -70,10 +86,12 @@ const STEM_CONFIG: Record<
 
 export default function AudioPlayer({ stemName, audioUrl }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const progressBarRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isSeeking, setIsSeeking] = useState(false);
 
   // Bu stem'in yapılandırmasını al (bilinmeyen stem'ler için "other" kullan)
   const config = STEM_CONFIG[stemName] || STEM_CONFIG.other;
@@ -95,23 +113,50 @@ export default function AudioPlayer({ stemName, audioUrl }: AudioPlayerProps) {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const handleTimeUpdate = () => {
+      if (!isSeeking) {
+        setCurrentTime(audio.currentTime);
+      }
+    };
+
     const handleLoadedMetadata = () => {
       setDuration(audio.duration);
       setIsLoaded(true);
     };
+
+    // durationchange olayı da dinlenir — bazı tarayıcılarda
+    // loadedmetadata'dan sonra duration güncellenmesi gerekebilir
+    const handleDurationChange = () => {
+      if (audio.duration && isFinite(audio.duration)) {
+        setDuration(audio.duration);
+        setIsLoaded(true);
+      }
+    };
+
+    // canplay → duration artık kesinlikle bilinir
+    const handleCanPlay = () => {
+      if (audio.duration && isFinite(audio.duration)) {
+        setDuration(audio.duration);
+        setIsLoaded(true);
+      }
+    };
+
     const handleEnded = () => setIsPlaying(false);
 
     audio.addEventListener("timeupdate", handleTimeUpdate);
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+    audio.addEventListener("durationchange", handleDurationChange);
+    audio.addEventListener("canplay", handleCanPlay);
     audio.addEventListener("ended", handleEnded);
 
     return () => {
       audio.removeEventListener("timeupdate", handleTimeUpdate);
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      audio.removeEventListener("durationchange", handleDurationChange);
+      audio.removeEventListener("canplay", handleCanPlay);
       audio.removeEventListener("ended", handleEnded);
     };
-  }, []);
+  }, [isSeeking]);
 
   // Play/Pause kontrolü
   const togglePlay = useCallback(async () => {
@@ -130,14 +175,67 @@ export default function AudioPlayer({ stemName, audioUrl }: AudioPlayerProps) {
     }
   }, [isPlaying]);
 
-  // İlerleme çubuğunda konuma atla (seek)
-  const handleSeek = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+  /**
+   * İlerleme çubuğuna tıklayarak konuma atlama (seek).
+   * Çubuk üzerindeki fare pozisyonuna göre hesaplama yapar.
+   */
+  const handleProgressBarClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
       const audio = audioRef.current;
-      if (!audio) return;
+      const bar = progressBarRef.current;
+      if (!audio || !bar || !duration) return;
 
-      const newTime = (parseFloat(e.target.value) / 100) * duration;
+      const rect = bar.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const percent = Math.max(0, Math.min(1, clickX / rect.width));
+      const newTime = percent * duration;
+
       audio.currentTime = newTime;
+      setCurrentTime(newTime);
+    },
+    [duration]
+  );
+
+  /**
+   * Sürükleme (drag) ile seek desteği.
+   * mousedown → mousemove → mouseup zinciri ile çalışır.
+   */
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const audio = audioRef.current;
+      const bar = progressBarRef.current;
+      if (!audio || !bar || !duration) return;
+
+      setIsSeeking(true);
+
+      const rect = bar.getBoundingClientRect();
+
+      const handleMouseMove = (moveEvent: MouseEvent) => {
+        const clickX = moveEvent.clientX - rect.left;
+        const percent = Math.max(0, Math.min(1, clickX / rect.width));
+        const newTime = percent * duration;
+        setCurrentTime(newTime);
+      };
+
+      const handleMouseUp = (upEvent: MouseEvent) => {
+        const clickX = upEvent.clientX - rect.left;
+        const percent = Math.max(0, Math.min(1, clickX / rect.width));
+        const newTime = percent * duration;
+        audio.currentTime = newTime;
+        setCurrentTime(newTime);
+        setIsSeeking(false);
+
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+      };
+
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+
+      // İlk tıklama konumunu da uygula
+      const clickX = e.clientX - rect.left;
+      const percent = Math.max(0, Math.min(1, clickX / rect.width));
+      const newTime = percent * duration;
       setCurrentTime(newTime);
     },
     [duration]
@@ -151,8 +249,8 @@ export default function AudioPlayer({ stemName, audioUrl }: AudioPlayerProps) {
       className="glass-card p-5 transition-all duration-300 hover:border-border-light/80 group"
       id={`player-${stemName}`}
     >
-      {/* Gizli HTML5 audio elementi */}
-      <audio ref={audioRef} src={audioUrl} preload="metadata" />
+      {/* Gizli HTML5 audio elementi — preload="auto" ile tam dosya yüklenmesini sağla */}
+      <audio ref={audioRef} src={audioUrl} preload="auto" />
 
       <div className="flex items-center gap-4">
         {/* ── Stem İkonu ── */}
@@ -187,9 +285,9 @@ export default function AudioPlayer({ stemName, audioUrl }: AudioPlayerProps) {
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Süre göstergesi */}
+              {/* Süre göstergesi — formatTime(duration) / formatTime(currentTime) */}
               <span className="text-xs font-mono text-muted tabular-nums">
-                {formatTime(currentTime)} / {formatTime(duration)}
+                {formatTime(duration)} / {formatTime(currentTime)}
               </span>
 
               {/* Play/Pause butonu */}
@@ -214,27 +312,29 @@ export default function AudioPlayer({ stemName, audioUrl }: AudioPlayerProps) {
             </div>
           </div>
 
-          {/* ── İlerleme Çubuğu ── */}
-          <div className="relative">
+          {/* ── İlerleme Çubuğu (Tıklanabilir + Sürüklenebilir) ── */}
+          <div
+            ref={progressBarRef}
+            className="relative h-2 cursor-pointer group/progress"
+            onClick={handleProgressBarClick}
+            onMouseDown={handleMouseDown}
+          >
             {/* Arka plan çubuk */}
-            <div className="h-1.5 bg-card rounded-full overflow-hidden">
+            <div className="h-1.5 bg-card rounded-full overflow-hidden group-hover/progress:h-2 transition-all duration-150">
               {/* Renkli ilerleme */}
               <div
-                className={`h-full bg-gradient-to-r ${config.gradient} rounded-full transition-all duration-100`}
+                className={`h-full bg-gradient-to-r ${config.gradient} rounded-full transition-[width] duration-100`}
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
 
-            {/* Seek slider (görünmez ama tıklanabilir) */}
-            <input
-              type="range"
-              min="0"
-              max="100"
-              step="0.1"
-              value={progressPercent}
-              onChange={handleSeek}
-              className="audio-slider absolute inset-0 w-full opacity-0 cursor-pointer"
-              title="İlerleme çubuğu"
+            {/* Seek handle (ilerleme noktası) — hover'da görünür */}
+            <div
+              className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white shadow-md border-2 opacity-0 group-hover/progress:opacity-100 transition-opacity duration-150 pointer-events-none"
+              style={{
+                left: `calc(${progressPercent}% - 7px)`,
+                borderColor: "var(--color-accent)",
+              }}
             />
           </div>
         </div>

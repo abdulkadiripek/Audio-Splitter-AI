@@ -15,9 +15,9 @@ import os
 import uuid
 from pathlib import Path
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks
+from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
 
 from ai_engine import AudioSeparator, TaskStatus
 from utils import create_zip_archive, get_safe_filename
@@ -37,7 +37,7 @@ logger = logging.getLogger("audiosplitter.api")
 # ──────────────────────────────────────────────
 app = FastAPI(
     title="AudioSplitter AI",
-    description="Yapay zeka ile müzik dosyalarını 4 kök sese ayıran API",
+    description="Yapay zeka ile müzik dosyalarını 6 kök sese ayıran API",
     version="1.0.0",
 )
 
@@ -55,6 +55,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Range", "Content-Length", "Accept-Ranges"],
 )
 
 # ──────────────────────────────────────────────
@@ -200,7 +201,7 @@ async def get_task_status(task_id: str):
 @app.get("/api/download/{task_id}")
 async def download_results(task_id: str):
     """
-    Tamamlanmış bir görevin 4 stem dosyasını tek bir .zip arşivi olarak döner.
+    Tamamlanmış bir görevin tüm stem dosyalarını tek bir .zip arşivi olarak döner.
 
     ZIP dosyası bellekte oluşturulur (diske yazılmaz) ve StreamingResponse
     ile doğrudan istemciye aktarılır.
@@ -247,17 +248,22 @@ async def download_results(task_id: str):
 # GET /api/stream/{task_id}/{stem} — Tek Stem Stream
 # ──────────────────────────────────────────────
 @app.get("/api/stream/{task_id}/{stem}")
-async def stream_stem(task_id: str, stem: str):
+async def stream_stem(task_id: str, stem: str, request: Request):
     """
     Belirli bir stem'in WAV dosyasını doğrudan stream eder.
     Frontend'deki HTML5 <audio> elementleri bu endpoint'i kullanır.
 
+    HTTP Range isteklerini destekler — bu sayede tarayıcı ses dosyasının
+    toplam süresini (duration) belirleyebilir ve kullanıcı istediği
+    konuma atlayabilir (seek).
+
     Args:
         task_id: Görevin UUID'si
-        stem: Stem adı (vocals, drums, bass, other)
+        stem: Stem adı (vocals, drums, bass, guitar, piano, other)
+        request: HTTP isteği (Range header okumak için)
 
     Returns:
-        WAV dosyası stream (audio/wav)
+        WAV dosyası stream (audio/wav), Range destekli
     """
     task = separator.get_task_info(task_id)
 
@@ -281,20 +287,68 @@ async def stream_stem(task_id: str, stem: str):
     if not os.path.exists(stem_path):
         raise HTTPException(status_code=404, detail="Stem dosyası diskten silinmiş")
 
-    def iterfile():
-        """Dosyayı parça parça okuyarak stream eder (bellek dostu)."""
-        with open(stem_path, "rb") as f:
-            while chunk := f.read(65536):  # 64 KB parçalar
-                yield chunk
+    file_size = os.path.getsize(stem_path)
+    range_header = request.headers.get("range")
 
-    return StreamingResponse(
-        iterfile(),
-        media_type="audio/wav",
-        headers={
-            "Content-Disposition": f'inline; filename="{stem}.wav"',
-            "Accept-Ranges": "bytes",
-        },
-    )
+    if range_header:
+        # ── HTTP Range İsteği (Partial Content) ──
+        # Tarayıcı "Range: bytes=0-" veya "Range: bytes=12345-" gibi
+        # istekler göndererek dosyanın belirli bir bölümünü ister.
+        # Bu sayede seek (atlama) ve duration (süre) çalışır.
+        range_str = range_header.replace("bytes=", "")
+        range_parts = range_str.split("-")
+        start = int(range_parts[0]) if range_parts[0] else 0
+        end = int(range_parts[1]) if range_parts[1] else file_size - 1
+
+        # Güvenlik kontrolü
+        if start >= file_size:
+            raise HTTPException(status_code=416, detail="Range Not Satisfiable")
+        end = min(end, file_size - 1)
+        content_length = end - start + 1
+
+        def iter_range():
+            """Dosyanın belirli byte aralığını stream eder."""
+            with open(stem_path, "rb") as f:
+                f.seek(start)
+                remaining = content_length
+                while remaining > 0:
+                    chunk_size = min(65536, remaining)
+                    chunk = f.read(chunk_size)
+                    if not chunk:
+                        break
+                    remaining -= len(chunk)
+                    yield chunk
+
+        return StreamingResponse(
+            iter_range(),
+            status_code=206,
+            media_type="audio/wav",
+            headers={
+                "Content-Range": f"bytes {start}-{end}/{file_size}",
+                "Content-Length": str(content_length),
+                "Accept-Ranges": "bytes",
+                "Content-Disposition": f'inline; filename="{stem}.wav"',
+            },
+        )
+    else:
+        # ── Tam Dosya İsteği ──
+        # Range header yoksa dosyanın tamamını gönder.
+        # Content-Length ekleyerek tarayıcının duration hesaplamasını sağla.
+        def iterfile():
+            """Dosyayı parça parça okuyarak stream eder (bellek dostu)."""
+            with open(stem_path, "rb") as f:
+                while chunk := f.read(65536):  # 64 KB parçalar
+                    yield chunk
+
+        return StreamingResponse(
+            iterfile(),
+            media_type="audio/wav",
+            headers={
+                "Content-Disposition": f'inline; filename="{stem}.wav"',
+                "Accept-Ranges": "bytes",
+                "Content-Length": str(file_size),
+            },
+        )
 
 
 # ──────────────────────────────────────────────

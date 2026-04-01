@@ -228,7 +228,9 @@ export default function Home() {
           Müzik dosyalarınızı yapay zeka ile{" "}
           <span className="text-accent-light font-medium">vokal</span>,{" "}
           <span className="text-orange-400 font-medium">bateri</span>,{" "}
-          <span className="text-blue-400 font-medium">bas</span> ve{" "}
+          <span className="text-blue-400 font-medium">bas</span>,{" "}
+          <span className="text-amber-400 font-medium">gitar</span>,{" "}
+          <span className="text-rose-400 font-medium">piyano</span> ve{" "}
           <span className="text-emerald-400 font-medium">diğer</span>{" "}
           enstrümanlara ayırın
         </p>
@@ -261,8 +263,8 @@ export default function Home() {
                 },
                 {
                   icon: AudioWaveform,
-                  title: "4 Stem Ayrışım",
-                  desc: "Vokal, Bateri, Bas, Diğer",
+                  title: "6 Stem Ayrışım",
+                  desc: "Vokal, Bateri, Bas, Gitar, Piyano, Diğer",
                 },
               ].map((feat) => (
                 <div
@@ -353,8 +355,8 @@ export default function Home() {
                 </h2>
               </div>
               <p className="text-sm text-muted">
-                <span className="font-mono">{fileName}</span> başarıyla 4 ses
-                katmanına ayrıldı
+                <span className="font-mono">{fileName}</span> başarıyla{" "}
+                {stems.length} ses katmanına ayrıldı
               </p>
             </div>
 

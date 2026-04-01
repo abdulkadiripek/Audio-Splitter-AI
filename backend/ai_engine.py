@@ -2,10 +2,12 @@
 AudioSplitter AI — Yapay Zeka Motoru (ai_engine.py)
 ====================================================
 Bu modül, Facebook/Meta'nın Demucs (Hybrid Transformer Demucs) modelini
-kullanarak müzik dosyalarını 4 kök sese (stem) ayırır:
+kullanarak müzik dosyalarını 6 kök sese (stem) ayırır:
   - vocals (vokal)
   - drums (bateri)
   - bass (bas gitar)
+  - guitar (gitar)
+  - piano (piyano)
   - other (diğer enstrümanlar)
 
 VRAM Güvenlik Önlemleri (4 GB GPU için):
@@ -122,14 +124,15 @@ class AudioSeparator:
         if self._model is not None:
             return
 
-        logger.info("🔄 Demucs htdemucs modeli yükleniyor (segment=2)...")
+        logger.info("🔄 Demucs htdemucs_6s modeli yükleniyor (segment=2)...")
         try:
             from demucs.pretrained import get_model
             from demucs.apply import BagOfModels
 
             # segment=2: VRAM tasarrufu için kısa segment uzunluğu.
             # Varsayılan genellikle ~7.8 saniyedir ki bu 4 GB VRAM'de risk oluşturur.
-            model = get_model("htdemucs")
+            # htdemucs_6s: 6 stem ayırma (vocals, drums, bass, guitar, piano, other)
+            model = get_model("htdemucs_6s")
 
             # Segment boyutunu ayarla — model tipine göre farklı yaklaşım
             if isinstance(model, BagOfModels):
@@ -184,7 +187,7 @@ class AudioSeparator:
         1. asyncio.Lock() ile GPU'yu kilitler (tek seferde 1 işlem)
         2. Modeli yükler (lazy loading)
         3. Ses dosyasını okur ve modelden geçirir
-        4. 4 stem'i ayrı .wav dosyaları olarak kaydeder
+        4. 6 stem'i ayrı .wav dosyaları olarak kaydeder
         5. VRAM'i temizler
 
         Args:
