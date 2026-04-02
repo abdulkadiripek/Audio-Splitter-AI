@@ -12,6 +12,7 @@
  *   - POST /api/upload → task_id al
  *   - GET /api/status/{task_id} → 3 saniyede bir polling
  *   - GET /api/download/{task_id} → ZIP indir
+ *   - GET /api/download/{task_id}/{stem} → Tek stem indir
  *   - GET /api/stream/{task_id}/{stem} → Tek stem stream
  */
 
@@ -26,9 +27,11 @@ import {
   CheckCircle2,
   AlertTriangle,
   Waves,
+  PlayCircle,
+  StopCircle,
 } from "lucide-react";
 import Dropzone from "../components/Dropzone";
-import AudioPlayer from "../components/AudioPlayer";
+import AudioPlayer, { AudioPlayerHandle } from "../components/AudioPlayer";
 
 // Backend API base URL
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -55,7 +58,11 @@ export default function Home() {
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [progressMessage, setProgressMessage] = useState<string>("");
   const [processingMsgIndex, setProcessingMsgIndex] = useState(0);
+  const [isAllPlaying, setIsAllPlaying] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Stem player ref'leri — toplu oynat için
+  const playerRefs = useRef<Record<string, AudioPlayerHandle | null>>({});
 
   /**
    * Dosya yükleme işlemi:
@@ -135,6 +142,14 @@ export default function Home() {
         // "processing" veya "queued" ise polling devam eder
       } catch (err) {
         console.error("Polling hatası:", err);
+        setAppState("failed");
+        setErrorMessage(
+          "Sunucu bağlantısı koptu veya işlem zaman aşımına uğradı. (Sunucu güncellenmiş olabilir). Lütfen dosyayı tekrar yükleyin."
+        );
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current);
+          pollingRef.current = null;
+        }
       }
     };
 
@@ -193,8 +208,55 @@ export default function Home() {
     }
   }, [taskId, fileName]);
 
+  /**
+   * Toplu Oynat/Durdur: Tüm stem'leri aynı anda başlatır veya durdurur.
+   */
+  const handlePlayAll = useCallback(async () => {
+    if (isAllPlaying) {
+      // Tümünü durdur
+      for (const stem of stems) {
+        playerRefs.current[stem]?.pause();
+      }
+      setIsAllPlaying(false);
+    } else {
+      // Önce hepsini başa sar, sonra senkronize başlat
+      for (const stem of stems) {
+        playerRefs.current[stem]?.seekTo(0);
+      }
+      // Küçük bir gecikme ile hepsini başlat (senkronizasyon için)
+      const playPromises = stems.map((stem) =>
+        playerRefs.current[stem]?.play()
+      );
+      await Promise.all(playPromises);
+      setIsAllPlaying(true);
+    }
+  }, [isAllPlaying, stems]);
+
+  /**
+   * Tüm stem'lerin bitip bitmediğini kontrol eder.
+   * Eğer hepsi bittiyse isAllPlaying'i sıfırla.
+   */
+  useEffect(() => {
+    if (!isAllPlaying || stems.length === 0) return;
+
+    const checkInterval = setInterval(() => {
+      const anyPlaying = stems.some(
+        (stem) => playerRefs.current[stem]?.isCurrentlyPlaying()
+      );
+      if (!anyPlaying) {
+        setIsAllPlaying(false);
+      }
+    }, 1000);
+
+    return () => clearInterval(checkInterval);
+  }, [isAllPlaying, stems]);
+
   /** Uygulamayı başlangıç durumuna sıfırla */
   const handleReset = useCallback(() => {
+    // Tüm player'ları durdur
+    for (const stem of stems) {
+      playerRefs.current[stem]?.stop();
+    }
     setAppState("idle");
     setTaskId(null);
     setStems([]);
@@ -202,11 +264,13 @@ export default function Home() {
     setErrorMessage("");
     setProgressMessage("");
     setProcessingMsgIndex(0);
+    setIsAllPlaying(false);
+    playerRefs.current = {};
     if (pollingRef.current) {
       clearInterval(pollingRef.current);
       pollingRef.current = null;
     }
-  }, []);
+  }, [stems]);
 
   return (
     <main className="min-h-screen bg-background bg-gradient-radial">
@@ -228,9 +292,7 @@ export default function Home() {
           Müzik dosyalarınızı yapay zeka ile{" "}
           <span className="text-accent-light font-medium">vokal</span>,{" "}
           <span className="text-orange-400 font-medium">bateri</span>,{" "}
-          <span className="text-blue-400 font-medium">bas</span>,{" "}
-          <span className="text-amber-400 font-medium">gitar</span>,{" "}
-          <span className="text-rose-400 font-medium">piyano</span> ve{" "}
+          <span className="text-blue-400 font-medium">bas</span> ve{" "}
           <span className="text-emerald-400 font-medium">diğer</span>{" "}
           enstrümanlara ayırın
         </p>
@@ -263,8 +325,8 @@ export default function Home() {
                 },
                 {
                   icon: AudioWaveform,
-                  title: "6 Stem Ayrışım",
-                  desc: "Vokal, Bateri, Bas, Gitar, Piyano, Diğer",
+                  title: "4 Stem Ayrışım",
+                  desc: "Vokal, Bateri, Bas, Diğer",
                 },
               ].map((feat) => (
                 <div
@@ -335,7 +397,7 @@ export default function Home() {
               )}
 
               <p className="text-xs text-muted/60 mt-6">
-                Bu işlem dosya boyutuna göre 1-3 dakika sürebilir
+                Bu işlem dosya boyutuna göre 1-5 dakika sürebilir
               </p>
             </div>
           </section>
@@ -360,13 +422,47 @@ export default function Home() {
               </p>
             </div>
 
+            {/* ── Toplu Oynat Butonu ── */}
+            <button
+              onClick={handlePlayAll}
+              className={`
+                w-full flex items-center justify-center gap-3
+                py-3.5 px-6 rounded-2xl
+                font-semibold text-base
+                transition-all duration-300
+                ${
+                  isAllPlaying
+                    ? "bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/30 text-red-400 hover:from-red-500/30 hover:to-orange-500/30"
+                    : "bg-gradient-to-r from-accent/20 to-purple-500/20 border border-accent/30 text-accent-light hover:from-accent/30 hover:to-purple-500/30"
+                }
+                hover:scale-[1.01] active:scale-[0.99]
+              `}
+              id="play-all-button"
+            >
+              {isAllPlaying ? (
+                <>
+                  <StopCircle className="w-5 h-5" />
+                  Tümünü Durdur
+                </>
+              ) : (
+                <>
+                  <PlayCircle className="w-5 h-5" />
+                  Tümünü Oynat
+                </>
+              )}
+            </button>
+
             {/* Stem Player'ları */}
             <div className="space-y-3">
               {stems.map((stem) => (
                 <AudioPlayer
                   key={stem}
+                  ref={(handle) => {
+                    playerRefs.current[stem] = handle;
+                  }}
                   stemName={stem}
                   audioUrl={`${API_BASE}/api/stream/${taskId}/${stem}`}
+                  downloadUrl={`${API_BASE}/api/download/${taskId}/${stem}`}
                 />
               ))}
             </div>

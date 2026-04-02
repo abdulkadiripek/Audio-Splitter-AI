@@ -13,6 +13,7 @@ Endpoint'ler:
 import logging
 import os
 import uuid
+import urllib.parse
 from pathlib import Path
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks, Request
@@ -21,6 +22,30 @@ from fastapi.responses import StreamingResponse, Response
 
 from ai_engine import AudioSeparator, TaskStatus
 from utils import create_zip_archive, get_safe_filename
+
+
+def safe_content_disposition(disposition: str, filename: str) -> str:
+    """
+    RFC 5987 uyumlu Content-Disposition header oluşturur.
+    Türkçe karakterler (ğ, ş, ü, ö, ç, ı) gibi non-ASCII karakterleri
+    URL-encode ederek HTTP header'da güvenle kullanılmasını sağlar.
+
+    Args:
+        disposition: 'attachment' veya 'inline'
+        filename: Dosya adı (Türkçe karakterler içerebilir)
+
+    Returns:
+        Content-Disposition header değeri
+    """
+    # ASCII-safe dosya adı (non-ASCII karakterleri kaldır)
+    ascii_name = filename.encode('ascii', 'ignore').decode('ascii')
+    if not ascii_name or ascii_name == '.wav' or ascii_name == '.zip':
+        ascii_name = 'download' + os.path.splitext(filename)[1]
+
+    # UTF-8 URL-encoded dosya adı
+    utf8_name = urllib.parse.quote(filename)
+
+    return f"{disposition}; filename=\"{ascii_name}\"; filename*=UTF-8''{utf8_name}"
 
 # ──────────────────────────────────────────────
 # Logging Yapılandırması
@@ -239,7 +264,7 @@ async def download_results(task_id: str):
         zip_buffer,
         media_type="application/zip",
         headers={
-            "Content-Disposition": f'attachment; filename="{zip_filename}"',
+            "Content-Disposition": safe_content_disposition("attachment", zip_filename),
         },
     )
 
@@ -327,7 +352,7 @@ async def stream_stem(task_id: str, stem: str, request: Request):
                 "Content-Range": f"bytes {start}-{end}/{file_size}",
                 "Content-Length": str(content_length),
                 "Accept-Ranges": "bytes",
-                "Content-Disposition": f'inline; filename="{stem}.wav"',
+                "Content-Disposition": safe_content_disposition("inline", f"{stem}.wav"),
             },
         )
     else:
@@ -344,11 +369,68 @@ async def stream_stem(task_id: str, stem: str, request: Request):
             iterfile(),
             media_type="audio/wav",
             headers={
-                "Content-Disposition": f'inline; filename="{stem}.wav"',
+                "Content-Disposition": safe_content_disposition("inline", f"{stem}.wav"),
                 "Accept-Ranges": "bytes",
                 "Content-Length": str(file_size),
             },
         )
+
+
+# ──────────────────────────────────────────────
+# GET /api/download/{task_id}/{stem} — Tek Stem İndirme
+# ──────────────────────────────────────────────
+@app.get("/api/download/{task_id}/{stem}")
+async def download_single_stem(task_id: str, stem: str):
+    """
+    Belirli bir stem dosyasını indirilebilir WAV olarak döner.
+
+    Args:
+        task_id: Görevin UUID'si
+        stem: Stem adı (vocals, drums, bass, guitar, piano, other)
+
+    Returns:
+        WAV dosyası (audio/wav, attachment olarak)
+    """
+    task = separator.get_task_info(task_id)
+
+    if not task:
+        raise HTTPException(status_code=404, detail="Görev bulunamadı")
+
+    if task.status != TaskStatus.COMPLETED:
+        raise HTTPException(
+            status_code=400,
+            detail="Görev henüz tamamlanmadı",
+        )
+
+    if stem not in task.stem_paths:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Stem bulunamadı: {stem}. Mevcut stem'ler: {list(task.stem_paths.keys())}",
+        )
+
+    stem_path = task.stem_paths[stem]
+
+    if not os.path.exists(stem_path):
+        raise HTTPException(status_code=404, detail="Stem dosyası diskten silinmiş")
+
+    file_size = os.path.getsize(stem_path)
+    safe_name = Path(task.original_filename).stem
+
+    def iterfile():
+        with open(stem_path, "rb") as f:
+            while chunk := f.read(65536):
+                yield chunk
+
+    logger.info(f"📥 Tek stem indirme: {safe_name}_{stem}.wav (görev: {task_id})")
+
+    return StreamingResponse(
+        iterfile(),
+        media_type="audio/wav",
+        headers={
+            "Content-Disposition": safe_content_disposition("attachment", f"{safe_name}_{stem}.wav"),
+            "Content-Length": str(file_size),
+        },
+    )
 
 
 # ──────────────────────────────────────────────

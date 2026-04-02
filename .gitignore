@@ -1,2 +1,3 @@
 .venv/
-backends/temp_*
+backends/temp_outputs/*
+backends/temp_uploads/*
