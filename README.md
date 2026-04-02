@@ -2,98 +2,98 @@
 
 ![Sound Studio AI](https://img.shields.io/badge/Status-Active-success) ![Python](https://img.shields.io/badge/Backend-Python_3.10+-blue) ![FastAPI](https://img.shields.io/badge/Framework-FastAPI-009688) ![Next.js](https://img.shields.io/badge/Frontend-Next.js_14+-black) ![AI](https://img.shields.io/badge/AI-Demucs_v4-ff69b4)
 
-**Sound Studio AI**, modern bir web arayüzü ile güçlendirilmiş, yapay zeka destekli bir ses ayrıştırma (audio source separation) uygulamasıdır. Meta'nın son teknoloji **Demucs v4 (htdemucs_ft)** modelini kullanarak herhangi bir müzik dosyasını 6 farklı kök sese (stem) ayırabilir: **Vocals (Vokal), Drums (Bateri), Bass (Bas), Guitar (Gitar), Piano (Piyano) ve Other (Diğer)**.
+**Sound Studio AI** is an AI-powered audio source separation application empowered by a modern web interface. Using Meta's state-of-the-art **Demucs v4 (htdemucs_ft)** model, it can separate any music file into 6 different stems: **Vocals, Drums, Bass, Guitar, Piano, and Other**.
 
 ---
 
-## ✨ Özellikler
+## ✨ Features
 
-- 🧠 **Gelişmiş Yapay Zeka Modeli:** Meta'nın `htdemucs_ft` modeli sayesinde yüksek kaliteli (high-fidelity) 6-stem ses ayrıştırması.
-- ⚡ **Asenkron İşlem & Long Polling:** Büyük boyutlu ses dosyalarının arka planda sorunsuz işlenmesi ve Frontend tarafında durumun (Queued, Processing, Completed, Failed) canlı güncellenmesi.
-- 🎧 **Canlı Ses Akışı (Audio Streaming):** Ayrıştırılan sesleri indirmeden önce doğrudan tarayıcı üzerinden (HTTP Range Request desteği ile) kesintisiz dinleyebilme ve ileri/geri sarabilme.
-- 📦 **Tek Tıkla İndirme:** İster ayrıştırılan sesleri tek tek indirin, ister tamamını otomatik olarak `.zip` halinde kolayca bilgisayarınıza kaydedin.
-- 🎨 **Modern ve Dinamik Arayüz:** Next.js ve Tailwind CSS v4 kullanılarak geliştirilen, Glassmorphism detaylara sahip koyu tema (Dark Mode) modern kullanıcı arayüzü.
-- 🚀 **CUDA Bağımsız Ses G/Ç:** Özelleştirilmiş mimari sayesinde, `torchaudio` kaynaklı CUDA uyumsuzluk problemlerini aşmak için `soundfile` kullanılmıştır.
+- 🧠 **Advanced AI Model:** High-fidelity 6-stem audio separation using Meta's `htdemucs_ft` model.
+- ⚡ **Async Processing & Long Polling:** Seamless background processing of large audio files with live status updates (Queued, Processing, Completed, Failed) on the Frontend.
+- 🎧 **Live Audio Streaming:** Listen seamlessly and seek forward/backward directly in the browser (with HTTP Range Request support) before downloading the separated stems.
+- 📦 **One-Click Download:** Download separated stems individually or save all of them easily as a `.zip` file to your computer.
+- 🎨 **Modern and Dynamic UI:** A modern user interface with a Dark Mode featuring Glassmorphism details, developed using Next.js and Tailwind CSS v4.
+- 🚀 **CUDA-Independent Audio I/O:** Customized architecture utilizes `soundfile` instead of `torchaudio` to overcome CUDA incompatibility issues.
 
 ---
 
-## 🛠 Teknoloji Yığını
+## 🛠 Technology Stack
 
-### 🎨 Frontend (İstemci)
+### 🎨 Frontend (Client)
 - **Framework:** Next.js (React 19)
-- **Stil:** Tailwind CSS v4, Lucide React (İkonlar)
-- **Dil:** TypeScript
+- **Styling:** Tailwind CSS v4, Lucide React (Icons)
+- **Language:** TypeScript
 
-### ⚙️ Backend (Sunucu)
+### ⚙️ Backend (Server)
 - **Framework:** FastAPI
-- **Yapay Zeka Engine:** PyTorch, Demucs v4 (htdemucs_ft)
-- **Ses Dosyası (I/O):** Soundfile, Numpy
-- **Asenkron Yönetim:** FastAPI BackgroundTasks, asyncio
+- **AI Engine:** PyTorch, Demucs v4 (htdemucs_ft)
+- **Audio I/O:** Soundfile, Numpy
+- **Async Management:** FastAPI BackgroundTasks, asyncio
 
 ---
 
-## 📂 Proje Yapısı
+## 📂 Project Structure
 
 ```bash
 sound-studio-ai/
-├── .gitignore              # Kapsamlı Git ignore kuralları (Python, Node, OS, IDE vb.)
-├── backend/                # FastAPI Sunucusu ve AI Engine
-│   ├── ai_engine.py        # Demucs AI model yöneticisi ve işlem sınıfı
-│   ├── main.py             # FastAPI REST endpoint'leri (Upload, Stream, Download)
-│   ├── requirements.txt    # Python bağımlılıkları listesi
-│   ├── utils.py            # Dosya güvenliği ve ZIP oluşturma araçları
-│   ├── temp_uploads/       # (Otomatik oluşturulur) Yüklenen dosyalar
-│   └── temp_outputs/       # (Otomatik oluşturulur) İşlenen AI sonuçları
-├── frontend/               # Next.js Web Uygulaması
-│   ├── package.json        # Node.js bağımlılıkları ve script'leri
-│   ├── postcss.config.mjs  # Tailwind/PostCSS konfigürasyonu
-│   ├── tsconfig.json       # TypeScript ayarları
-│   ├── app/                # Next.js 14+ App Router dizini
-│   └── components/         # Tekrar kullanılabilir React bileşenleri (AudioPlayer vb.)
-└── README.md               # Proje dökümü
+├── .gitignore              # Comprehensive Git ignore rules (Python, Node, OS, IDE, etc.)
+├── backend/                # FastAPI Server and AI Engine
+│   ├── ai_engine.py        # Demucs AI model manager and processing class
+│   ├── main.py             # FastAPI REST endpoints (Upload, Stream, Download)
+│   ├── requirements.txt    # List of Python dependencies
+│   ├── utils.py            # File security and ZIP creation utilities
+│   ├── temp_uploads/       # (Auto-created) Uploaded files
+│   └── temp_outputs/       # (Auto-created) Processed AI results
+├── frontend/               # Next.js Web Application
+│   ├── package.json        # Node.js dependencies and scripts
+│   ├── postcss.config.mjs  # Tailwind/PostCSS configuration
+│   ├── tsconfig.json       # TypeScript configuration
+│   ├── app/                # Next.js 14+ App Router directory
+│   └── components/         # Reusable React components (AudioPlayer, etc.)
+└── README.md               # Project documentation
 ```
 
 ---
 
-## 🚀 Kurulum & Çalıştırma Rehberi
+## 🚀 Installation & Running Guide
 
-Uygulamayı kendi bilgisayarınızda çalıştırmak için Frontend ve Backend olmak üzere iki servisi de başlatmanız gerekmektedir.
+To run the application on your local machine, you need to start both the Frontend and Backend services.
 
-### 1️⃣ Ön Gereksinimler
-- Python 3.10 veya üzeri
-- Node.js 20.x veya üzeri
-- *(Gelişmiş hız için)* NVIDIA GPU ve yüklü CUDA sürücüleri (Zorunlu değil, CPU ile de çalışır)
+### 1️⃣ Prerequisites
+- Python 3.10 or higher
+- Node.js 20.x or higher
+- *(For improved speed)* NVIDIA GPU and installed CUDA drivers (Optional, also works with CPU)
 
-### 2️⃣ Backend Kurulumu
+### 2️⃣ Backend Installation
 
 ```bash
-# 1. Backend klasörüne geçin
+# 1. Navigate to the backend folder
 cd backend
 
-# 2. Sanal ortam (Virtual Environment) oluşturun ve aktif edin
+# 2. Create and activate a Virtual Environment
 python -m venv ../.venv
-source ../.venv/bin/activate  # Windows için: ..\.venv\Scripts\activate
+source ../.venv/bin/activate  # For Windows: ..\.venv\Scripts\activate
 
-# 3. Bağımlılıkları yükleyin
+# 3. Install dependencies
 pip install -r requirements.txt
 
-# NOT: İşletim sisteminize ve CUDA sürümünüze uygun PyTorch'u kurmanız gerekebilir:
-# Detaylı bilgi: https://pytorch.org/get-started/locally/
+# NOTE: You may need to install the PyTorch version that matches your OS and CUDA version:
+# More info: https://pytorch.org/get-started/locally/
 ```
 
-### 3️⃣ Frontend Kurulumu
+### 3️⃣ Frontend Installation
 
 ```bash
-# 1. Frontend klasörüne geçin (Backend ile farklı bir terminal sekmesi kullanabilirsiniz)
+# 1. Navigate to the frontend folder (You can use a different terminal tab from the Backend)
 cd frontend
 
-# 2. Node modüllerini yükleyin
+# 2. Install Node modules
 npm install
 ```
 
-### 4️⃣ Uygulamayı Başlatma
+### 4️⃣ Starting the Application
 
-Aynı anda hem API'yi hem de web arayüzünü çalıştırmalısınız.
+You must run both the API and the web interface simultaneously.
 
 **Terminal 1 (Backend):**
 ```bash
@@ -101,41 +101,41 @@ cd backend
 source ../.venv/bin/activate
 python main.py
 ```
-> *API Sunucusu `http://localhost:8000` adresinde çalışacaktır.*
+> *The API Server will be running at `http://localhost:8000`.*
 
 **Terminal 2 (Frontend):**
 ```bash
 cd frontend
 npm run dev
 ```
-> *Web Uygulaması `http://localhost:3000` adresinde çalışacaktır. Tarayıcınızdan bu adrese giderek uygulamayı kullanmaya başlayabilirsiniz.*
+> *The Web Application will be running at `http://localhost:3000`. You can start using the application by visiting this address in your browser.*
 
 ---
 
-## 📡 API Endpoint'leri
+## 📡 API Endpoints
 
-Uygulamanın Backend katmanı (FastAPI) aşağıdaki REST API endpoint'lerini sağlar:
+The Backend layer (FastAPI) of the application provides the following REST API endpoints:
 
-| HTTP Metodu | Endpoint | Açıklama |
+| HTTP Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `GET` | `/api/health` | Sistemin ayakta olup olmadığını ve GPU durumunu kontrol eder. |
-| `POST` | `/api/upload` | Müzik dosyasını yükler, asenkron `Demucs` görevini başlatır ve `task_id` döner. |
-| `GET` | `/api/status/{task_id}` | Görevin güncel durumunu (sıra, işleniyor, bitti) sorgular (Long Polling modeli). |
-| `GET` | `/api/stream/{task_id}/{stem}` | Belirli bir kök sesi (örneğin vokal) doğrudan tarayıcı üzerinden stream eder (Range). |
-| `GET` | `/api/download/{task_id}` | İlgili görevin içerisindeki 6 sesi de sıkıştırarak tek bir `.zip` dosyası olarak idirir. |
-| `GET` | `/api/download/{task_id}/{stem}`| İzole edilmiş tek bir `.mp3` dosyasını bilgisayara kaydeder. |
+| `GET` | `/api/health` | Checks if the system is up and the GPU status. |
+| `POST` | `/api/upload` | Uploads a music file, starts the async `Demucs` task, and returns a `task_id`. |
+| `GET` | `/api/status/{task_id}` | Queries the current status of the task (queued, processing, completed) using a Long Polling model. |
+| `GET` | `/api/stream/{task_id}/{stem}` | Streams a specific stem (e.g., vocals) directly in the browser (Range Support). |
+| `GET` | `/api/download/{task_id}` | Compresses all 6 stems from the respective task into a single `.zip` file for download. |
+| `GET` | `/api/download/{task_id}/{stem}`| Saves a single isolated stem as an `.mp3` file to the computer. |
 
 ---
 
-## ⚠️ Bilinen Sorunlar ve Çözümleri
+## ⚠️ Known Issues and Solutions
 
-**1. `torchaudio` ve CUDA Uyumu Sorunları (Özellikle Arch Linux vb.)**
-- Projede ses yükleme sistemi olarak kasıtlı olarak `torchaudio` yerine `soundfile` kullanılmıştır.
-- Eğer GPU ile işleme alırken kütüphane hataları (cuDNN, libcublas vb.) alırsanız, sorunun sisteminizdeki global CUDA sürümü (örn: v13.1) ile Python pip paketindeki (örn: cu121) sürüm çakışması olabileceğini unutmayın. Sistem paket yöneticisinden PyTorch yüklemek bu tür dağıtımlarda (Arch vb.) daha stabildir.
+**1. `torchaudio` and CUDA Compatibility Issues (Especially Arch Linux, etc.)**
+- The project intentionally uses `soundfile` instead of `torchaudio` as the audio loading system.
+- If you receive library errors (cuDNN, libcublas, etc.) when processing with GPU, note that the issue may be a version conflict between your system's global CUDA version (e.g., v13.1) and the version in the Python pip package (e.g., cu121). Installing PyTorch via the system package manager is more stable on such distributions (like Arch).
 
-**2. Frontend Server Hatası Oluşması Durumu**
-- Uygulama, dosya işlerken backend yeniden başlatılırsa otomatik olarak hata durumlarını yakalar ve UI'da gösterir. Lütfen işlemi temizleyip dosyayı yeniden yükleyin.
+**2. Frontend Server Error Occurrence**
+- If the backend restarts while processing a file, the application automatically catches the error states and displays them in the UI. Please clear the process and re-upload the file.
 
 ---
 
-*Bu proje, geliştiriciye özgü AI ve Müzik Teknolojileri çalışmaları kapsamında inşa edilmiştir.*
+*This project was built as part of developer-specific AI and Music Technologies research.*
