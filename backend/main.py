@@ -64,7 +64,7 @@ logger = logging.getLogger("audiosplitter.api")
 # ──────────────────────────────────────────────
 app = FastAPI(
     title="AudioSplitter AI",
-    description="Yapay zeka ile müzik dosyalarını 6 kök sese ayıran API",
+    description="Yapay zeka ile müzik dosyalarını 4 kök sese ve enstrümantale ayıran API",
     version="1.0.0",
 )
 
@@ -349,12 +349,12 @@ async def stream_stem(task_id: str, stem: str, request: Request):
         return StreamingResponse(
             iter_range(),
             status_code=206,
-            media_type="audio/mpeg",
+            media_type="audio/wav",
             headers={
                 "Content-Range": f"bytes {start}-{end}/{file_size}",
                 "Content-Length": str(content_length),
                 "Accept-Ranges": "bytes",
-                "Content-Disposition": safe_content_disposition("inline", f"{stem}.mp3"),
+                "Content-Disposition": safe_content_disposition("inline", f"{stem}.wav"),
             },
         )
     else:
@@ -369,9 +369,9 @@ async def stream_stem(task_id: str, stem: str, request: Request):
 
         return StreamingResponse(
             iterfile(),
-            media_type="audio/mpeg",
+            media_type="audio/wav",
             headers={
-                "Content-Disposition": safe_content_disposition("inline", f"{stem}.mp3"),
+                "Content-Disposition": safe_content_disposition("inline", f"{stem}.wav"),
                 "Accept-Ranges": "bytes",
                 "Content-Length": str(file_size),
             },
@@ -423,13 +423,13 @@ async def download_single_stem(task_id: str, stem: str):
             while chunk := f.read(65536):
                 yield chunk
 
-    logger.info(f"📥 Tek stem indirme: {safe_name}_{stem}.mp3 (görev: {task_id})")
+    logger.info(f"📥 Tek stem indirme: {safe_name}_{stem}.wav (görev: {task_id})")
 
     return StreamingResponse(
         iterfile(),
-        media_type="audio/mpeg",
+        media_type="audio/wav",
         headers={
-            "Content-Disposition": safe_content_disposition("attachment", f"{safe_name}_{stem}.mp3"),
+            "Content-Disposition": safe_content_disposition("attachment", f"{safe_name}_{stem}.wav"),
             "Content-Length": str(file_size),
         },
     )

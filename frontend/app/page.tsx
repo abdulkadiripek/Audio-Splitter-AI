@@ -211,6 +211,31 @@ export default function Home() {
   }, [taskId, fileName]);
 
   /**
+   * Sadece Altyapı indirme (Instrumental)
+   */
+  const handleDownloadInstrumental = useCallback(async () => {
+    if (!taskId) return;
+
+    try {
+      const response = await fetch(`${API_BASE}/api/download/${taskId}/instrumental`);
+      if (!response.ok) throw new Error("İndirme başarısız");
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const baseName = fileName.replace(/\.[^/.]+$/, "");
+      a.download = `${baseName}_instrumental.mp3`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Altyapı indirme hatası:", err);
+    }
+  }, [taskId, fileName]);
+
+  /**
    * Toplu Oynat/Durdur: Tüm stem'leri aynı anda başlatır veya durdurur.
    */
   const handlePlayAll = useCallback(async () => {
@@ -440,7 +465,7 @@ export default function Home() {
               </div>
               <p className="text-sm text-muted">
                 <span className="font-mono">{fileName}</span> başarıyla{" "}
-                {stems.length} ses katmanına ayrıldı
+                {stems.filter(s => s !== "instrumental").length} ses katmanına ayrıldı
               </p>
             </div>
 
@@ -494,7 +519,7 @@ export default function Home() {
 
             {/* Stem Player'ları */}
             <div className="space-y-3">
-              {stems.map((stem) => (
+              {stems.filter(stem => stem !== "instrumental").map((stem) => (
                 <AudioPlayer
                   key={stem}
                   ref={(handle) => {
@@ -508,7 +533,26 @@ export default function Home() {
             </div>
 
             {/* Aksiyon Butonları */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+            <div className="flex flex-col md:flex-row gap-3 pt-4">
+              {/* Sadece Altyapı İndir Butonu */}
+              <button
+                onClick={handleDownloadInstrumental}
+                className="
+                  flex-1 flex items-center justify-center gap-3
+                  py-4 px-6 rounded-2xl
+                  bg-gradient-to-r from-blue-500 to-indigo-600
+                  text-white font-semibold text-base whitespace-nowrap
+                  hover:opacity-90 hover:scale-[1.02]
+                  active:scale-[0.98]
+                  transition-all duration-200
+                  shadow-lg
+                "
+                id="download-instrumental-button"
+              >
+                <Music className="w-5 h-5" />
+                Sadece Altyapı İndir
+              </button>
+
               {/* ZIP İndir Butonu */}
               <button
                 onClick={handleDownloadZip}
@@ -516,7 +560,7 @@ export default function Home() {
                   flex-1 flex items-center justify-center gap-3
                   py-4 px-6 rounded-2xl
                   bg-gradient-to-r from-accent to-accent-dark
-                  text-white font-semibold text-lg
+                  text-white font-semibold text-base whitespace-nowrap
                   hover:opacity-90 hover:scale-[1.02]
                   active:scale-[0.98]
                   transition-all duration-200
@@ -524,8 +568,8 @@ export default function Home() {
                 "
                 id="download-zip-button"
               >
-                <Download className="w-6 h-6" />
-                Tüm Parçaları İndir (.ZIP)
+                <Download className="w-5 h-5" />
+                Tümünü İndir (.ZIP)
               </button>
 
               {/* Yeni İşlem Butonu */}

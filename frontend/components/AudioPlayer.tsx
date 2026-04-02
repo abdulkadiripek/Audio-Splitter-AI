@@ -118,6 +118,13 @@ const STEM_CONFIG: Record<
     color: "text-emerald-400",
     bgColor: "bg-emerald-500/20",
   },
+  instrumental: {
+    icon: Music,
+    label: "Sadece Altyapı (Vokalsiz)",
+    gradient: "from-indigo-500 to-blue-500",
+    color: "text-indigo-400",
+    bgColor: "bg-indigo-500/20",
+  },
 };
 
 const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(
@@ -130,6 +137,7 @@ const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(
     const [duration, setDuration] = useState(0);
     const [isLoaded, setIsLoaded] = useState(false);
     const [isSeeking, setIsSeeking] = useState(false);
+    const [volume, setVolume] = useState(1);
 
     // Bu stem'in yapılandırmasını al (bilinmeyen stem'ler için "other" kullan)
     const config = STEM_CONFIG[stemName] || STEM_CONFIG.other;
@@ -262,6 +270,22 @@ const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(
 
       audio.muted = !isMuted;
       setIsMuted(!isMuted);
+    }, [isMuted]);
+
+    // Ses Seviyesi (Volume) kontrolü
+    const handleVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+      const audio = audioRef.current;
+      if (!audio) return;
+      const val = parseFloat(e.target.value);
+      audio.volume = val;
+      setVolume(val);
+      if (val === 0) {
+        audio.muted = true;
+        setIsMuted(true);
+      } else if (isMuted) {
+        audio.muted = false;
+        setIsMuted(false);
+      }
     }, [isMuted]);
 
     // Tek stem indirme
@@ -407,26 +431,38 @@ const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(
                   {formatTime(currentTime)} / {formatTime(duration)}
                 </span>
 
-                {/* Mute/Unmute butonu */}
-                <button
-                  onClick={toggleMute}
-                  className={`
-                    p-2 rounded-full transition-all duration-200
-                    ${
-                      isMuted
-                        ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                        : "bg-card hover:bg-card-hover text-muted hover:text-foreground"
-                    }
-                  `}
-                  title={isMuted ? "Sesi Aç" : "Sesi Kapat"}
-                  id={`mute-${stemName}`}
-                >
-                  {isMuted ? (
-                    <VolumeX className="w-4 h-4" />
-                  ) : (
-                    <Volume2 className="w-4 h-4" />
-                  )}
-                </button>
+                {/* Ses Ayarı (Volume Slider ve Mute) */}
+                <div className="flex items-center gap-1.5 group/vol bg-card/50 px-1.5 py-1 rounded-full border border-transparent hover:border-border-light/50 transition-all">
+                  <button
+                    onClick={toggleMute}
+                    className={`
+                      p-1.5 rounded-full transition-all duration-200
+                      ${
+                        isMuted || volume === 0
+                          ? "bg-red-500/20 text-red-400"
+                          : "text-muted hover:text-foreground"
+                      }
+                    `}
+                    title={isMuted ? "Sesi Aç" : "Sesi Kapat"}
+                    id={`mute-${stemName}`}
+                  >
+                    {isMuted || volume === 0 ? (
+                      <VolumeX className="w-4 h-4" />
+                    ) : (
+                      <Volume2 className="w-4 h-4" />
+                    )}
+                  </button>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={isMuted ? 0 : volume}
+                    onChange={handleVolumeChange}
+                    className="w-16 h-1.5 rounded-full appearance-none bg-black/20 cursor-pointer focus:outline-none accent-accent hover:accent-accent-light transition-all"
+                    title="Ses Seviyesi"
+                  />
+                </div>
 
                 {/* İndirme butonu */}
                 {downloadUrl && (

@@ -2,13 +2,12 @@
 AudioSplitter AI — Yapay Zeka Motoru (ai_engine.py)
 ====================================================
 Bu modül, Facebook/Meta'nın Demucs (Hybrid Transformer Demucs) modelini
-kullanarak müzik dosyalarını 6 kök sese (stem) ayırır:
+kullanarak müzik dosyalarını 4 kök sese (stem) ve enstrümantale ayırır:
   - vocals (vokal)
   - drums (bateri)
   - bass (bas gitar)
-  - guitar (gitar)
-  - piano (piyano)
   - other (diğer enstrümanlar)
+  - instrumental (vokalsiz altyapı)
 
 VRAM Güvenlik Önlemleri (4 GB GPU için):
   - Model segment boyutu küçük tutulur (segment=2)
@@ -131,8 +130,8 @@ class AudioSeparator:
 
             # segment=2: VRAM tasarrufu için kısa segment uzunluğu.
             # Varsayılan genellikle ~7.8 saniyedir ki bu 4 GB VRAM'de risk oluşturur.
-            # htdemucs_6s: 6 stem ayırma (vocals, drums, bass, guitar, piano, other)
-            model = get_model("htdemucs_6s")
+            # htdemucs_ft: 4 stem ayırma (vocals, drums, bass, other) (max kalite modeli)
+            model = get_model("htdemucs_ft")
 
             # Segment boyutunu ayarla — model tipine göre farklı yaklaşım
             if isinstance(model, BagOfModels):
@@ -316,7 +315,7 @@ class AudioSeparator:
                     from demucs.apply import apply_model
 
                     # apply_model, modeli parça parça (segment) uygular
-                    # overlap=0.1: Segmentler arası %10 örtüşme (daha düzgün geçişler)
+                    # Boğuklaşmayı (phasing) önlemek için shifts ve overlap dengeli bir değere alındı
                     sources = await loop.run_in_executor(
                         None,
                         lambda: apply_model(
@@ -336,20 +335,48 @@ class AudioSeparator:
                 stem_names = self._model.sources  # ['drums', 'bass', 'other', 'vocals']
                 output_dir = Path(task.output_dir)
 
+                instrumental_waveform = None
+
                 for i, stem_name in enumerate(stem_names):
                     stem_audio = sources[0, i].cpu()  # GPU'dan CPU'ya taşı
                     stem_path = output_dir / f"{stem_name}.wav"
+
+                    # Vokal dışındakileri birleştirerek enstrümantal ses üretimi
+                    if stem_name != "vocals":
+                        if instrumental_waveform is None:
+                            instrumental_waveform = stem_audio.clone()
+                        else:
+                            instrumental_waveform += stem_audio
 
                     # soundfile ile WAV olarak kaydet
                     # soundfile (channels, samples) → (samples, channels) bekler
                     def _save_wav(sp=stem_path, sa=stem_audio, sr=sample_rate):
                         audio_np = sa.numpy().T  # (channels, samples) → (samples, channels)
+                        # Normalizasyon (kısıklığı ve boğukluğu önlemek için)
+                        max_val = np.max(np.abs(audio_np))
+                        if max_val > 0:
+                            audio_np = (audio_np / max_val) * 0.95
                         sf.write(str(sp), audio_np, sr, subtype="PCM_16")
 
                     await loop.run_in_executor(None, _save_wav)
 
                     task.stem_paths[stem_name] = str(stem_path)
                     logger.info(f"  ✅ {stem_name}.wav kaydedildi")
+
+                # Enstrümantal (vokal çıkarılmış) dosyayı ayrıyeten kaydet
+                if instrumental_waveform is not None:
+                    inst_path = output_dir / "instrumental.wav"
+                    def _save_inst(sp=inst_path, sa=instrumental_waveform, sr=sample_rate):
+                        audio_np = sa.numpy().T
+                        # Normalizasyon
+                        max_val = np.max(np.abs(audio_np))
+                        if max_val > 0:
+                            audio_np = (audio_np / max_val) * 0.95
+                        sf.write(str(sp), audio_np, sr, subtype="PCM_16")
+
+                    await loop.run_in_executor(None, _save_inst)
+                    task.stem_paths["instrumental"] = str(inst_path)
+                    logger.info("  ✅ instrumental.wav (Sadece Altyapı) kaydedildi")
 
                 # ── Adım 7: Başarılı Tamamlanma ──
                 task.status = TaskStatus.COMPLETED
