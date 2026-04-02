@@ -43,3 +43,12 @@ Thumbs.db
 .vscode/
 .idea/
 *.log
+
+# =========================
+# Media & Temp Files
+# =========================
+*.wav
+*.mp3
+*.flac
+temp/
+tmp/
