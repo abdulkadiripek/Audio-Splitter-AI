@@ -29,6 +29,8 @@ import {
   Waves,
   PlayCircle,
   StopCircle,
+  MicVocal,
+  Music,
 } from "lucide-react";
 import Dropzone from "../components/Dropzone";
 import AudioPlayer, { AudioPlayerHandle } from "../components/AudioPlayer";
@@ -231,6 +233,26 @@ export default function Home() {
       setIsAllPlaying(true);
     }
   }, [isAllPlaying, stems]);
+
+  /**
+   * Sadece vokali çalar, diğerlerini sessize alır (Sadece Vokal)
+   */
+  const handleSoloVocal = useCallback(() => {
+    stems.forEach((stem) => {
+      const isVocal = stem === "vocals";
+      playerRefs.current[stem]?.setMuted(!isVocal);
+    });
+  }, [stems]);
+
+  /**
+   * Vokali sessize alır, diğerlerini çalar (Sadece Altyapı)
+   */
+  const handleInstrumental = useCallback(() => {
+    stems.forEach((stem) => {
+      const isVocal = stem === "vocals";
+      playerRefs.current[stem]?.setMuted(isVocal);
+    });
+  }, [stems]);
 
   /**
    * Tüm stem'lerin bitip bitmediğini kontrol eder.
@@ -447,10 +469,28 @@ export default function Home() {
               ) : (
                 <>
                   <PlayCircle className="w-5 h-5" />
-                  Tümünü Oynat
+                  Tümünü Senkronize Oynat
                 </>
               )}
             </button>
+
+            {/* ── Hızlı Filtre Butonları ── */}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={handleSoloVocal}
+                className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 bg-purple-500/10 border border-purple-500/20 text-purple-400 hover:bg-purple-500/20 active:scale-95"
+              >
+                <MicVocal className="w-4 h-4" />
+                Sadece Vokal
+              </button>
+              <button
+                onClick={handleInstrumental}
+                className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 bg-orange-500/10 border border-orange-500/20 text-orange-400 hover:bg-orange-500/20 active:scale-95"
+              >
+                <Music className="w-4 h-4" />
+                Sadece Altyapı
+              </button>
+            </div>
 
             {/* Stem Player'ları */}
             <div className="space-y-3">

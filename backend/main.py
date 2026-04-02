@@ -39,8 +39,10 @@ def safe_content_disposition(disposition: str, filename: str) -> str:
     """
     # ASCII-safe dosya adı (non-ASCII karakterleri kaldır)
     ascii_name = filename.encode('ascii', 'ignore').decode('ascii')
-    if not ascii_name or ascii_name == '.wav' or ascii_name == '.zip':
-        ascii_name = 'download' + os.path.splitext(filename)[1]
+    
+    ext = os.path.splitext(filename)[1]
+    if not ascii_name or ascii_name == ext:
+        ascii_name = 'download' + ext
 
     # UTF-8 URL-encoded dosya adı
     utf8_name = urllib.parse.quote(filename)
@@ -275,7 +277,7 @@ async def download_results(task_id: str):
 @app.get("/api/stream/{task_id}/{stem}")
 async def stream_stem(task_id: str, stem: str, request: Request):
     """
-    Belirli bir stem'in WAV dosyasını doğrudan stream eder.
+    Belirli bir stem'in ses dosyasını (MP3 vb.) doğrudan stream eder.
     Frontend'deki HTML5 <audio> elementleri bu endpoint'i kullanır.
 
     HTTP Range isteklerini destekler — bu sayede tarayıcı ses dosyasının
@@ -288,7 +290,7 @@ async def stream_stem(task_id: str, stem: str, request: Request):
         request: HTTP isteği (Range header okumak için)
 
     Returns:
-        WAV dosyası stream (audio/wav), Range destekli
+        Ses dosyası stream (audio/mpeg), Range destekli
     """
     task = separator.get_task_info(task_id)
 
@@ -347,12 +349,12 @@ async def stream_stem(task_id: str, stem: str, request: Request):
         return StreamingResponse(
             iter_range(),
             status_code=206,
-            media_type="audio/wav",
+            media_type="audio/mpeg",
             headers={
                 "Content-Range": f"bytes {start}-{end}/{file_size}",
                 "Content-Length": str(content_length),
                 "Accept-Ranges": "bytes",
-                "Content-Disposition": safe_content_disposition("inline", f"{stem}.wav"),
+                "Content-Disposition": safe_content_disposition("inline", f"{stem}.mp3"),
             },
         )
     else:
@@ -367,9 +369,9 @@ async def stream_stem(task_id: str, stem: str, request: Request):
 
         return StreamingResponse(
             iterfile(),
-            media_type="audio/wav",
+            media_type="audio/mpeg",
             headers={
-                "Content-Disposition": safe_content_disposition("inline", f"{stem}.wav"),
+                "Content-Disposition": safe_content_disposition("inline", f"{stem}.mp3"),
                 "Accept-Ranges": "bytes",
                 "Content-Length": str(file_size),
             },
@@ -382,14 +384,14 @@ async def stream_stem(task_id: str, stem: str, request: Request):
 @app.get("/api/download/{task_id}/{stem}")
 async def download_single_stem(task_id: str, stem: str):
     """
-    Belirli bir stem dosyasını indirilebilir WAV olarak döner.
+    Belirli bir stem dosyasını indirilebilir MP3 olarak döner.
 
     Args:
         task_id: Görevin UUID'si
         stem: Stem adı (vocals, drums, bass, guitar, piano, other)
 
     Returns:
-        WAV dosyası (audio/wav, attachment olarak)
+        MP3 dosyası (audio/mpeg, attachment olarak)
     """
     task = separator.get_task_info(task_id)
 
@@ -421,13 +423,13 @@ async def download_single_stem(task_id: str, stem: str):
             while chunk := f.read(65536):
                 yield chunk
 
-    logger.info(f"📥 Tek stem indirme: {safe_name}_{stem}.wav (görev: {task_id})")
+    logger.info(f"📥 Tek stem indirme: {safe_name}_{stem}.mp3 (görev: {task_id})")
 
     return StreamingResponse(
         iterfile(),
-        media_type="audio/wav",
+        media_type="audio/mpeg",
         headers={
-            "Content-Disposition": safe_content_disposition("attachment", f"{safe_name}_{stem}.wav"),
+            "Content-Disposition": safe_content_disposition("attachment", f"{safe_name}_{stem}.mp3"),
             "Content-Length": str(file_size),
         },
     )

@@ -37,8 +37,10 @@ def create_zip_archive(stem_paths: Dict[str, str], original_filename: str = "tra
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
         for stem_name, stem_path in stem_paths.items():
             if os.path.exists(stem_path):
-                # ZIP içindeki dosya adı: "şarkı_adı/vocals.wav" şeklinde
-                arcname = f"{base_name}/{stem_name}.wav"
+                # ZIP içindeki dosya adı: "şarkı_adı/vocals.mp3" şeklinde
+                # Uzantıyı dinamik olarak al
+                ext = Path(stem_path).suffix
+                arcname = f"{base_name}/{stem_name}{ext}"
                 zf.write(stem_path, arcname)
                 logger.info(f"  📦 ZIP'e eklendi: {arcname}")
             else:

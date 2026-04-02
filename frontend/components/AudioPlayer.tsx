@@ -59,6 +59,7 @@ export interface AudioPlayerHandle {
   seekTo: (time: number) => void;
   getAudioElement: () => HTMLAudioElement | null;
   isCurrentlyPlaying: () => boolean;
+  setMuted: (isMuted: boolean) => void;
 }
 
 /**
@@ -179,6 +180,12 @@ const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(
       },
       getAudioElement: () => audioRef.current,
       isCurrentlyPlaying: () => isPlaying,
+      setMuted: (mute: boolean) => {
+        setIsMuted(mute);
+        if (audioRef.current) {
+          audioRef.current.muted = mute;
+        }
+      },
     }));
 
     // ── Audio Event Listener'ları ──
@@ -268,7 +275,7 @@ const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `${stemName}.wav`;
+        a.download = `${stemName}.mp3`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
