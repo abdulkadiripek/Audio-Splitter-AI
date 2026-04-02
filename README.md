@@ -2,6 +2,12 @@
 
 ![Sound Studio AI](https://img.shields.io/badge/Status-Active-success) ![Python](https://img.shields.io/badge/Backend-Python_3.10+-blue) ![FastAPI](https://img.shields.io/badge/Framework-FastAPI-009688) ![Next.js](https://img.shields.io/badge/Frontend-Next.js_14+-black) ![AI](https://img.shields.io/badge/AI-Demucs_v4-ff69b4)
 
+<br>
+<p align="center">
+  <img src="assets/screenshot_main.png" alt="Sound Studio AI Interface" width="100%">
+</p>
+<br>
+
 **Sound Studio AI** is an AI-powered audio source separation application empowered by a modern web interface. Using Meta's state-of-the-art **Demucs v4 (htdemucs_ft)** model, it can separate any music file into 6 different stems: **Vocals, Drums, Bass, Guitar, Piano, and Other**.
 
 ---
@@ -17,8 +23,27 @@
 
 ---
 
-## 🛠 Technology Stack
+## 📸 Screenshots
 
+### 1. Uploading & Processing Audio
+When an audio file is uploaded, the application initiates an asynchronous background task. It keeps the user informed in real-time about whether the task is queued or currently being processed using short polling.
+
+<p align="center">
+  <img src="assets/Screenshot_20260402_144317.png" alt="Processing State" width="100%">
+</p>
+
+<br>
+
+### 2. Live Results & Audio Player
+Once the deep learning model completes the source separation, the UI displays customized audio players for every stem (Vocals, Drums, Bass, Guitar, Piano, Other). You can listen to them directly in the browser with full HTTP range support (seeking, volume control) and easily download any specific stem or all of them together as a ZIP archive.
+
+<p align="center">
+  <img src="assets/Screenshot_20260402_144516.png" alt="Results and Audio Player" width="100%">
+</p>
+
+---
+
+## 🛠 Technology Stack
 ### 🎨 Frontend (Client)
 - **Framework:** Next.js (React 19)
 - **Styling:** Tailwind CSS v4, Lucide React (Icons)
