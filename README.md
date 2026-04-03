@@ -1,166 +1,168 @@
 # 🎵 Sound Studio AI (AudioSplitter)
 
-![Sound Studio AI](https://img.shields.io/badge/Status-Active-success) ![Python](https://img.shields.io/badge/Backend-Python_3.10+-blue) ![FastAPI](https://img.shields.io/badge/Framework-FastAPI-009688) ![Next.js](https://img.shields.io/badge/Frontend-Next.js_14+-black) ![AI](https://img.shields.io/badge/AI-Demucs_v4-ff69b4)
+![Status](https://img.shields.io/badge/Status-Active-success) ![Python](https://img.shields.io/badge/Backend-Python_3.10+-blue) ![FastAPI](https://img.shields.io/badge/Framework-FastAPI-009688) ![Next.js](https://img.shields.io/badge/Frontend-Next.js_14+-black) ![AI](https://img.shields.io/badge/AI-Demucs_v4-ff69b4)
 
 <br>
 <p align="center">
-  <img src="assets/screenshot_main.png" alt="Sound Studio AI Interface" width="100%">
+  <img src="assets/screenshot_demo.png" alt="Sound Studio AI Main Interface" width="100%">
 </p>
 <br>
 
-**Sound Studio AI** is an AI-powered audio source separation application empowered by a modern web interface. Using Meta's state-of-the-art **Demucs v4 (htdemucs_ft)** model, it can separate any music file into 6 different stems: **Vocals, Drums, Bass, Guitar, Piano, and Other**.
+**Sound Studio AI** is an advanced, AI-powered audio source separation application featuring a beautifully designed web interface. Utilizing Meta's state-of-the-art **Demucs v4 (`htdemucs_ft`)** high-fidelity model, the application accurately separates any music track into highly detailed stems: **Vocals, Drums, Bass, and Other**. On top of these core stems, it dynamically generates a pristine, high-quality **Instrumental** track, giving you complete flexibility for karaoke, remixing, or detailed audio analysis.
 
 ---
 
-## ✨ Features
+## ✨ Key Features
 
-- 🧠 **Advanced AI Model:** High-fidelity 6-stem audio separation using Meta's `htdemucs_ft` model.
-- ⚡ **Async Processing & Long Polling:** Seamless background processing of large audio files with live status updates (Queued, Processing, Completed, Failed) on the Frontend.
-- 🎧 **Live Audio Streaming:** Listen seamlessly and seek forward/backward directly in the browser (with HTTP Range Request support) before downloading the separated stems.
-- 📦 **One-Click Download:** Download separated stems individually or save all of them easily as a `.zip` file to your computer.
-- 🎨 **Modern and Dynamic UI:** A modern user interface with a Dark Mode featuring Glassmorphism details, developed using Next.js and Tailwind CSS v4.
-- 🚀 **CUDA-Independent Audio I/O:** Customized architecture utilizes `soundfile` instead of `torchaudio` to overcome CUDA incompatibility issues.
+- 🧠 **High-Fidelity AI Separation:** Employs Meta's `htdemucs_ft` model to separate tracks into 4 precise stems (Vocals, Drums, Bass, Other) with unparalleled quality.
+- 🎸 **Dedicated Instrumental Generation:** Automatically strips vocals to provide a pristine, combined instrumental backing track perfect for practicing, covers, and karaoke.
+- ⚡ **Asynchronous Processing & Polling:** Delivers seamless background processing of large audio files without freezing your browser. Real-time status updates (Queued, Processing, Completed, Failed) keep you fully informed.
+- 🎧 **Interactive Live Streaming:** Listen to and evaluate your separated stems directly within the browser before downloading. Supports complete HTTP Range Requests, meaning you can easily seek forward/backward directly via the UI.
+- 📦 **One-Click Local Downloads:** Pick and choose specific stems (.mp3) or seamlessly download all generated stems packed into a single `.zip` archive.
+- 🎨 **Sleek & Dynamic UI/UX:** A visually stunning application designed with Next.js and Tailwind CSS. The elegant dark mode combined with glassmorphism creates a highly premium user experience.
+- 🚀 **Hardware Agnostic Audio I/O:** Custom architecture completely bypasses CUDA incompatibility issues often found on Linux by using `soundfile` instead of standard `torchaudio`.
 
 ---
 
-## 📸 Screenshots
+## 📸 Screenshots & Walkthrough
 
-### 1. Uploading & Processing Audio
-When an audio file is uploaded, the application initiates an asynchronous background task. It keeps the user informed in real-time about whether the task is queued or currently being processed using short polling.
+### 1. Uploading & Intelligent Processing
+When you drop an audio file into the application, a persistent background task takes over the heavy lifting. The frontend cleanly informs you whether the file is queued or currently under analysis using optimized short-polling.
 
 <p align="center">
-  <img src="assets/Screenshot_20260402_144317.png" alt="Processing State" width="100%">
+  <img src="assets/Screenshot_20260403_192534.png" alt="Processing State" width="100%">
 </p>
 
 <br>
 
-### 2. Live Results & Audio Player
-Once the deep learning model completes the source separation, the UI displays customized audio players for every stem (Vocals, Drums, Bass, Guitar, Piano, Other). You can listen to them directly in the browser with full HTTP range support (seeking, volume control) and easily download any specific stem or all of them together as a ZIP archive.
+### 2. Live Audio Delivery & Export
+Once Demucs v4 completes the source separation, a specialized audio player materializes for every stem (Vocals, Drums, Bass, Other, Instrumental). You can preview each track smoothly, seek through the timeline, and individually download or bundle everything instantly.
 
 <p align="center">
-  <img src="assets/Screenshot_20260402_144516.png" alt="Results and Audio Player" width="100%">
+  <img src="assets/Screenshot_20260403_192548.png" alt="Results and Audio Player" width="100%">
 </p>
 
 ---
 
 ## 🛠 Technology Stack
+
 ### 🎨 Frontend (Client)
 - **Framework:** Next.js (React 19)
-- **Styling:** Tailwind CSS v4, Lucide React (Icons)
+- **Styling:** Tailwind CSS v4, Lucide React (Icons), UI Micro-animations
 - **Language:** TypeScript
 
 ### ⚙️ Backend (Server)
 - **Framework:** FastAPI
-- **AI Engine:** PyTorch, Demucs v4 (htdemucs_ft)
+- **AI Engine:** PyTorch, Demucs v4 (`htdemucs_ft`)
 - **Audio I/O:** Soundfile, Numpy
-- **Async Management:** FastAPI BackgroundTasks, asyncio
+- **Coroutines:** FastAPI BackgroundTasks, asyncio
 
 ---
 
-## 📂 Project Structure
+## 📂 Project Architecture
 
 ```bash
 sound-studio-ai/
-├── .gitignore              # Comprehensive Git ignore rules (Python, Node, OS, IDE, etc.)
-├── backend/                # FastAPI Server and AI Engine
-│   ├── ai_engine.py        # Demucs AI model manager and processing class
-│   ├── main.py             # FastAPI REST endpoints (Upload, Stream, Download)
-│   ├── requirements.txt    # List of Python dependencies
-│   ├── utils.py            # File security and ZIP creation utilities
-│   ├── temp_uploads/       # (Auto-created) Uploaded files
-│   └── temp_outputs/       # (Auto-created) Processed AI results
-├── frontend/               # Next.js Web Application
-│   ├── package.json        # Node.js dependencies and scripts
-│   ├── postcss.config.mjs  # Tailwind/PostCSS configuration
-│   ├── tsconfig.json       # TypeScript configuration
-│   ├── app/                # Next.js 14+ App Router directory
-│   └── components/         # Reusable React components (AudioPlayer, etc.)
-└── README.md               # Project documentation
+├── .gitignore              # Explicit Git ignore rules prioritizing cleanliness
+├── backend/                # Heavy-lifting FastAPI Server & AI Wrapper
+│   ├── ai_engine.py        # Demucs AI model runtime and stream generation logic
+│   ├── main.py             # FastAPI REST endpoints (Upload, Polling, Stream, Download)
+│   ├── requirements.txt    # Essential Python dependencies
+│   ├── utils.py            # Security sanitization and ZIP archive generation
+│   ├── temp_uploads/       # (Auto-created) Temporary directory for raw uploads
+│   └── temp_outputs/       # (Auto-created) Temporary directory for AI inferences
+├── frontend/               # Premium Next.js React Web Application
+│   ├── package.json        # Node.js dependencies
+│   ├── postcss.config.mjs  # Tailwind transpilation
+│   ├── tsconfig.json       # Strict TypeScript configuration
+│   ├── app/                # Next.js App Router root directories
+│   └── components/         # Highly decoupled UI layers (AudioPlayer, FileUploader)
+└── README.md               # Extensive Project Documentation
 ```
 
 ---
 
-## 🚀 Installation & Running Guide
+## 🚀 Installation & Launch Guide
 
-To run the application on your local machine, you need to start both the Frontend and Backend services.
+Bring **Sound Studio AI** locally to your powerful machine or cloud instance quickly. Ensure you boot both the APIs and Web interfaces in parallel.
 
 ### 1️⃣ Prerequisites
-- Python 3.10 or higher
-- Node.js 20.x or higher
-- *(For improved speed)* NVIDIA GPU and installed CUDA drivers (Optional, also works with CPU)
+- **Python:** 3.10 or higher
+- **Node.js:** 20.x or higher
+- **Hardware Acceleration:** NVIDIA GPU with configured CUDA drivers strongly recommended for dramatic processing speed-up (gracefully falls back to CPU if unavailable).
 
 ### 2️⃣ Backend Installation
 
 ```bash
-# 1. Navigate to the backend folder
+# 1. Navigate to the backend directory
 cd backend
 
-# 2. Create and activate a Virtual Environment
+# 2. Spin up and activate a Virtual Environment
 python -m venv ../.venv
-source ../.venv/bin/activate  # For Windows: ..\.venv\Scripts\activate
+source ../.venv/bin/activate  # On Windows: ..\.venv\Scripts\activate
 
-# 3. Install dependencies
+# 3. Inject core AI requirements
 pip install -r requirements.txt
 
-# NOTE: You may need to install the PyTorch version that matches your OS and CUDA version:
-# More info: https://pytorch.org/get-started/locally/
+# NOTE: If you are encountering slow GPU integration, ensure you install the PyTorch 
+# distribution matching your localized CUDA version: https://pytorch.org/get-started/locally/
 ```
 
 ### 3️⃣ Frontend Installation
 
 ```bash
-# 1. Navigate to the frontend folder (You can use a different terminal tab from the Backend)
+# 1. Navigate to the frontend directory
 cd frontend
 
-# 2. Install Node modules
+# 2. Build the Node modules
 npm install
 ```
 
-### 4️⃣ Starting the Application
+### 4️⃣ Booting the Studio
 
-You must run both the API and the web interface simultaneously.
+Ensure your virtual environment is active in the backend terminal before you spin the engine up.
 
-**Terminal 1 (Backend):**
+**Terminal 1 (Backend API):**
 ```bash
 cd backend
 source ../.venv/bin/activate
 python main.py
 ```
-> *The API Server will be running at `http://localhost:8000`.*
+> *API Server goes live actively waiting at `http://localhost:8000`.*
 
-**Terminal 2 (Frontend):**
+**Terminal 2 (Frontend Interface):**
 ```bash
 cd frontend
 npm run dev
 ```
-> *The Web Application will be running at `http://localhost:3000`. You can start using the application by visiting this address in your browser.*
+> *The glamorous web frontend spins up at `http://localhost:3000`. Pop this into your browser!*
 
 ---
 
-## 📡 API Endpoints
+## 📡 API Reference
 
-The Backend layer (FastAPI) of the application provides the following REST API endpoints:
+The entire architecture is modularized strictly over state-independent REST APIs:
 
 | HTTP Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `GET` | `/api/health` | Checks if the system is up and the GPU status. |
-| `POST` | `/api/upload` | Uploads a music file, starts the async `Demucs` task, and returns a `task_id`. |
-| `GET` | `/api/status/{task_id}` | Queries the current status of the task (queued, processing, completed) using a Long Polling model. |
-| `GET` | `/api/stream/{task_id}/{stem}` | Streams a specific stem (e.g., vocals) directly in the browser (Range Support). |
-| `GET` | `/api/download/{task_id}` | Compresses all 6 stems from the respective task into a single `.zip` file for download. |
-| `GET` | `/api/download/{task_id}/{stem}`| Saves a single isolated stem as an `.mp3` file to the computer. |
+| `GET` | `/api/health` | Diagnostic routine verifying system readiness and GPU compute availability. |
+| `POST` | `/api/upload` | Ingests a media payload via `multipart/form-data`, queues the inference, and issues a traceable `task_id`. |
+| `GET` | `/api/status/{task_id}` | Long-polling friendly accessor dictating lifecycle tracking (queued -> processing -> completed) using the provided `task_id`. |
+| `GET` | `/api/stream/{task_id}/{stem}` | Buffer-safe endpoint that transmits pure audio byte streams into the browser via `Range` implementations. |
+| `GET` | `/api/download/{task_id}` | On-the-fly packing strategy compiling all inferenced stems and the instrumental into a lightweight `.zip` file. |
+| `GET` | `/api/download/{task_id}/{stem}`| Retrieves a specific requested high-fidelity stem directly as an isolated `.mp3` object. |
 
 ---
 
-## ⚠️ Known Issues and Solutions
+## ⚠️ Known Linux / Torch Ecosystem Solutions
 
-**1. `torchaudio` and CUDA Compatibility Issues (Especially Arch Linux, etc.)**
-- The project intentionally uses `soundfile` instead of `torchaudio` as the audio loading system.
-- If you receive library errors (cuDNN, libcublas, etc.) when processing with GPU, note that the issue may be a version conflict between your system's global CUDA version (e.g., v13.1) and the version in the Python pip package (e.g., cu121). Installing PyTorch via the system package manager is more stable on such distributions (like Arch).
+**1. `torchaudio` vs Native CUDA (Crucial for Arch Linux Users)**
+- We strategically opted out of traditional `torchaudio` implementations primarily because installing complex Python packages on rolling-release OS structures (like Arch) introduces massive `cuDNN`/`libcublas` disparities resulting in broken AI processes.
+- By defaulting the Audio Data Ingestion to `soundfile`, we significantly minimize library bleeding. If you still encounter pipeline crashes during rendering, enforce global system-level PyTorch installs via your OS package manager (`pacman`, `apt`) rather than `pip`.
 
-**2. Frontend Server Error Occurrence**
-- If the backend restarts while processing a file, the application automatically catches the error states and displays them in the UI. Please clear the process and re-upload the file.
+**2. Asynchronous State Drops**
+- Because inferences might take minutes, shutting down the server while a process is flagged active will result in orphaned states. Restart the backend daemon and simply drop your file locally to retry!
 
 ---
 
-*This project was built as part of developer-specific AI and Music Technologies research.*
+*Engineered as a bleeding-edge prototype combining Web Design capabilities with Deep AI Music Source Separation Technology.*
